@@ -15,10 +15,19 @@ public enum Keys0 {
     },
     B3 {
         public String toString() {
+            return "Йога";
+        }
+    },
+    B4 {
+        public String toString() {
+            return "Наш чат";
+        }
+    },
+    B5 {
+        public String toString() {
             return "В начало";
         }
-    }
-
+    },
 
 
     }

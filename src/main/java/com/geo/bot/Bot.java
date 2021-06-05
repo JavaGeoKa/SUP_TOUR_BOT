@@ -10,10 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -30,6 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Bot extends TelegramLongPollingBot {
 
     final static Logger log = Logger.getLogger(Bot.class);
+
+    final private String BACK = "⬅️  Back";
+    final private String NEXT = "Next ➡️";
+    final private String INDEX_OUT_OF_RANGE = "Requested index is out of range!";
 
 
     @Autowired
@@ -51,52 +60,120 @@ public class Bot extends TelegramLongPollingBot {
         @SneakyThrows
         @Override
         public void onUpdateReceived(Update update) {
-            long chat_id = update.getMessage().getChatId();
             SendMessage message = new SendMessage();
-            message.setChatId(chat_id);
 
-                //general commands
-                HashMap<String, Callable<SendMessage>> map = new HashMap<String, Callable<SendMessage>>() {
-                    {
-                        put("/start", () -> {
-                            return methodStart(update, message);
-                        });
+                if(update.hasMessage()) {
+                    message.setChatId(update.getMessage().getChatId());
+                    HashMap<String, Callable<SendMessage>> map = new HashMap<String, Callable<SendMessage>>() {
+                        {
+                            put("/start", () -> {
+                                return methodStart(update, message);
+                            });
 
-                        put("В начало", () -> {
-                            return methodStart(update, message);
-                        });
-                        put("Услуги", () -> {
-                            return methodService(update, message);
-                        });
-                        put("Галерея", () -> {
-                            return methodGallery(update, message);
-                        });
+                            put("В начало", () -> {
+                                return methodStart(update, message);
+                            });
+                            put("Услуги", () -> {
+                                return methodService(update, message);
+                            });
+                            put("Галерея", () -> {
+                                return methodGallery(update, message);
+                            });
+                            put("Йога", () -> {
+                                return methodYoga(update, message);
+                            });
+                            put("Галерея", () -> {
+                                return methodGallery(update, message);
+                            });
 
+
+
+                        }
+                    };
+                    try {
+                        sendAnswer(map.get(update.getMessage().getText()).call());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+
+                    }
+
+
+                } else if (update.hasCallbackQuery()) {
+                    if (update.hasCallbackQuery()) {
+                        CallbackQuery callbackquery = update.getCallbackQuery();
+                        String[] data = callbackquery.getData().split(":");
+
+                        for (String str : data) {
+                            System.out.println(str);
+                        }
+
+                        int index = Integer.parseInt(data[2]);
+
+                        if (data[0].equals("gallery")) {
+
+                            InlineKeyboardMarkup markup = null;
+
+                            if (data[1].equals("back")) {
+                                markup = this.getGalleryView(Integer.parseInt(data[2]), 1);
+                                if (index > 0) {
+                                    index--;
+                                }
+                            } else if (data[1].equals("next")) {
+                                markup = this.getGalleryView(Integer.parseInt(data[2]), 2);
+                                if (index < DataStarter.urls.size() - 1) {
+                                    index++;
+                                }
+                            } else if (data[1].equals("text")) {
+                                try {
+                                    this.sendAnswerCallbackQuery("Please use one of the given actions below, instead.", false, callbackquery);
+                                } catch (TelegramApiException exception) {
+                                    exception.printStackTrace();
+                                }
+                            }
+
+                            if (markup == null) {
+                                try {
+                                    this.sendAnswerCallbackQuery(INDEX_OUT_OF_RANGE, false, callbackquery);
+                                } catch (TelegramApiException exception) {
+                                    exception.printStackTrace();
+                                }
+                            } else {
+
+                                EditMessageText editMarkup = new EditMessageText();
+                                editMarkup.setChatId(callbackquery.getMessage().getChatId().toString());
+                                editMarkup.setInlineMessageId(callbackquery.getInlineMessageId());
+                                editMarkup.setText("(" + DataStarter.urls.get(index)[1] + ")");
+//                    editMarkup.enableMarkdown(true);
+                                editMarkup.setMessageId(callbackquery.getMessage().getMessageId());
+                                editMarkup.setReplyMarkup(markup);
+                                try {
+                                    execute(editMarkup);
+                                } catch (TelegramApiException exception) {
+                                    exception.printStackTrace();
+                                }
+
+                            }
+
+
+                        }
 
 
                     }
-                };
-
-
-
-
-
-                try {
-                    sendAnswer(map.get(update.getMessage().getText()).call());
-
-
-                } catch (Exception e) {
-
-                    e.printStackTrace();
-
 
 
                 }
 
+                //general commands
 
             }
 
-
+    private SendMessage methodYoga(Update update, SendMessage message) {
+        message.setText("(" + DataStarter.urls.get(0)[1] + ")");
+        message.enableMarkdown(true);
+        message.setReplyMarkup(this.getGalleryView(0, -1));
+        message.setChatId(update.getMessage().getChatId());
+        return message;
+    }
 
 
 //  METHODS----------------------------------------------------------------------------
@@ -142,6 +219,60 @@ public class Bot extends TelegramLongPollingBot {
 
         }
 
+    private InlineKeyboardMarkup getGalleryView(int index, int action){
+        /*
+         * action = 1 -> back
+         * action = 2 -> next
+         * action = -1 -> nothing
+         */
+
+        if(action == 1 && index > 0){
+            index--;
+        }
+        else if((action == 1 && index == 0)){
+            return null;
+        }
+        else if(action == 2 && index >= DataStarter.urls.size()-1){
+            return null;
+        }
+        else if(action == 2){
+            index++;
+        }
+
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        rowInline.add(new InlineKeyboardButton().setText(DataStarter.urls.get(index)[2]).setCallbackData("gallery:text:" + index));
+
+
+        List<InlineKeyboardButton> rowInline2 = new ArrayList<>();
+        rowInline2.add(new InlineKeyboardButton().setText(BACK).setCallbackData("gallery:back:" + index));
+        rowInline2.add(new InlineKeyboardButton().setText(NEXT).setCallbackData("gallery:next:" + index));
+
+        List<InlineKeyboardButton> rowInline3 = new ArrayList<>();
+        rowInline3.add(new InlineKeyboardButton().setText("Link").setUrl(DataStarter.urls.get(index)[0]));
+
+
+        rowsInline.add(rowInline);
+        rowsInline.add(rowInline3);
+        rowsInline.add(rowInline2);
+
+        markupInline.setKeyboard(rowsInline);
+
+        return markupInline;
+    }
+
+
+    private void sendAnswerCallbackQuery(String text, boolean alert, CallbackQuery callbackquery) throws TelegramApiException{
+        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
+        answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
+        answerCallbackQuery.setShowAlert(alert);
+        answerCallbackQuery.setText(text);
+        execute(answerCallbackQuery);
+    }
+
 
     private SendMessage methodService(Update update, SendMessage message) {
         keys.clear();
@@ -178,7 +309,7 @@ public class Bot extends TelegramLongPollingBot {
 
         //Photo
 
-        CliStarter.pics.entrySet().stream().limit(5).forEach(e -> {
+        DataStarter.pics.entrySet().stream().limit(5).forEach(e -> {
             photoOutMessage.setPhoto("SUP", new ByteArrayInputStream(e.getValue().getPicture()));
             photoOutMessage.setChatId(message.getChatId());
 
@@ -242,6 +373,7 @@ public class Bot extends TelegramLongPollingBot {
             KeyboardRow secondRow = new KeyboardRow();
             KeyboardRow thirdRow = new KeyboardRow();
             KeyboardRow fourthRow = new KeyboardRow();
+            KeyboardRow fiveRow = new KeyboardRow();
 
 
 
@@ -256,6 +388,8 @@ public class Bot extends TelegramLongPollingBot {
                     thirdRow.add(k);
                 } else if (indexButton == 3) {
                     fourthRow.add(k);
+                }else if (indexButton == 4) {
+                    fiveRow.add(k);
                 }
                 indexButton++;
             }
@@ -264,6 +398,7 @@ public class Bot extends TelegramLongPollingBot {
             keyboardRows.add(secondRow);
             keyboardRows.add(thirdRow);
             keyboardRows.add(fourthRow);
+            keyboardRows.add(fiveRow);
 
 
             replyKeyboardMarkup.setKeyboard(keyboardRows);
