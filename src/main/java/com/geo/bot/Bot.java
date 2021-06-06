@@ -3,7 +3,10 @@ package com.geo.bot;
 
 import com.geo.dao.PersonRepositoty;
 import com.geo.keys.Keys0;
+import com.geo.keys.KeysGallery;
+import com.geo.keys.KeysUslugi;
 import com.geo.model.Person;
+import com.vdurmont.emoji.EmojiParser;
 import lombok.SneakyThrows;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,12 @@ public class Bot extends TelegramLongPollingBot {
     @Autowired
     PersonRepositoty personRepositoty;
 
+//emoji
+//    private String chat = EmojiParser.parseToUnicode(":fire: Чат" );
+//    private String gallery = EmojiParser.parseToUnicode(":fire: Галлерея ");
+//    private String services = EmojiParser.parseToUnicode(":smile: Услуги");
+
+
 //keyboard
     List<String> keys = new ArrayList<>();
     public StringBuilder answer = new StringBuilder();
@@ -73,18 +82,22 @@ public class Bot extends TelegramLongPollingBot {
                             put("В начало", () -> {
                                 return methodStart(update, message);
                             });
-                            put("Услуги", () -> {
+                            put(EmojiParser.parseToUnicode(":hugging: Услуги"), () -> {
                                 return methodService(update, message);
                             });
-                            put("Галерея", () -> {
-                                return methodGallery(update, message);
+//                            put("Галерея", () -> {
+//                                return methodGallery(update, message);
+//                            });
+                            put(EmojiParser.parseToUnicode(":purple_heart: Галлерея"), () -> {
+                                return methodPics(update, message);
                             });
-                            put("Йога", () -> {
-                                return methodYoga(update, message);
+                            put(EmojiParser.parseToUnicode(":fire: Скидки и предложения"), () -> {
+                                return methodStart(update, message);
                             });
-                            put("Галерея", () -> {
-                                return methodGallery(update, message);
+                            put(EmojiParser.parseToUnicode(":thumbsup: Чат"), () -> {
+                                return methodStart(update, message);
                             });
+
 
 
 
@@ -125,7 +138,7 @@ public class Bot extends TelegramLongPollingBot {
                                 }
                             } else if (data[1].equals("text")) {
                                 try {
-                                    this.sendAnswerCallbackQuery("Please use one of the given actions below, instead.", false, callbackquery);
+                                    this.sendAnswerCallbackQuery("Пожалуйста, свяжитесь с нами и забронируйте посещение", false, callbackquery);
                                 } catch (TelegramApiException exception) {
                                     exception.printStackTrace();
                                 }
@@ -142,7 +155,7 @@ public class Bot extends TelegramLongPollingBot {
                                 EditMessageText editMarkup = new EditMessageText();
                                 editMarkup.setChatId(callbackquery.getMessage().getChatId().toString());
                                 editMarkup.setInlineMessageId(callbackquery.getInlineMessageId());
-                                editMarkup.setText("(" + DataStarter.urls.get(index)[1] + ")");
+                                editMarkup.setText("(" + DataStarter.urls.get(index)[1] + ")\n" + DataStarter.urls.get(index)[3]);
 //                    editMarkup.enableMarkdown(true);
                                 editMarkup.setMessageId(callbackquery.getMessage().getMessageId());
                                 editMarkup.setReplyMarkup(markup);
@@ -167,8 +180,15 @@ public class Bot extends TelegramLongPollingBot {
 
             }
 
-    private SendMessage methodYoga(Update update, SendMessage message) {
-        message.setText("(" + DataStarter.urls.get(0)[1] + ")");
+    private SendMessage methodPics(Update update, SendMessage message) {
+        keys.clear();
+        KeysGallery arr[] = KeysGallery.values();
+        for (KeysGallery i : arr) {
+            keys.add(i.toString());
+        }
+
+        addKeys(message, keys);
+        message.setText("(" + DataStarter.urls.get(0)[1] + ")\n" + DataStarter.urls.get(0)[3]);
         message.enableMarkdown(true);
         message.setReplyMarkup(this.getGalleryView(0, -1));
         message.setChatId(update.getMessage().getChatId());
@@ -211,9 +231,10 @@ public class Bot extends TelegramLongPollingBot {
 
             //Prepare first message
             answer.setLength(0);
-            answer.append("Добро пожаловать в бот XXX SUP STATION\n");
-
-
+            answer.append("Добро пожаловать в бот SUP туристического клуба 'XXX' \n");
+            answer.append("У нас вы можете хорошо провести время\n");
+            answer.append("Наши координаты -> " + "https://www.google.com/search?q=56.625099470791916%2C+60.368910812978946\n");
+            answer.append("Телефон для бронирования -> +79221878899");
             message.setText(answer.toString());
             return message;
 
@@ -251,12 +272,12 @@ public class Bot extends TelegramLongPollingBot {
         rowInline2.add(new InlineKeyboardButton().setText(BACK).setCallbackData("gallery:back:" + index));
         rowInline2.add(new InlineKeyboardButton().setText(NEXT).setCallbackData("gallery:next:" + index));
 
-        List<InlineKeyboardButton> rowInline3 = new ArrayList<>();
-        rowInline3.add(new InlineKeyboardButton().setText("Link").setUrl(DataStarter.urls.get(index)[0]));
+//        List<InlineKeyboardButton> rowInline3 = new ArrayList<>();
+//        rowInline3.add(new InlineKeyboardButton().setText("Link").setUrl(DataStarter.urls.get(index)[0]));
 
 
         rowsInline.add(rowInline);
-        rowsInline.add(rowInline3);
+//        rowsInline.add(rowInline3);
         rowsInline.add(rowInline2);
 
         markupInline.setKeyboard(rowsInline);
@@ -276,8 +297,8 @@ public class Bot extends TelegramLongPollingBot {
 
     private SendMessage methodService(Update update, SendMessage message) {
         keys.clear();
-        Keys0 arr[] = Keys0.values();
-        for (Keys0 i : arr) {
+        KeysUslugi arr[] = KeysUslugi.values();
+        for (KeysUslugi i : arr) {
             keys.add(i.toString());
         }
         addKeys(message, keys);
@@ -299,10 +320,11 @@ public class Bot extends TelegramLongPollingBot {
 
     }
 
+@Deprecated  //files
     private SendMessage methodGallery(Update update, SendMessage message) {
         keys.clear();
-        Keys0 arr[] = Keys0.values();
-        for (Keys0 i : arr) {
+        KeysGallery arr[] = KeysGallery.values();
+        for (KeysGallery i : arr) {
             keys.add(i.toString());
         }
         addKeys(message, keys);
@@ -380,16 +402,12 @@ public class Bot extends TelegramLongPollingBot {
 
             for (String k : keys) {
 
-                if (indexButton == 0) {
+                if (indexButton == 0 || indexButton ==1) {
                     firstRow.add(k);
-                } else if (indexButton == 1) {
+                } else if (indexButton == 2 || indexButton ==3) {
                     secondRow.add(k);
-                } else if (indexButton == 2) {
+                } else if (indexButton == 4 || indexButton ==5) {
                     thirdRow.add(k);
-                } else if (indexButton == 3) {
-                    fourthRow.add(k);
-                }else if (indexButton == 4) {
-                    fiveRow.add(k);
                 }
                 indexButton++;
             }

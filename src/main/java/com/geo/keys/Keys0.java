@@ -1,26 +1,28 @@
 package com.geo.keys;
 
+import com.vdurmont.emoji.EmojiParser;
+
 public enum Keys0 {
 
 
     B1 {
         public String toString() {
-            return "Услуги";
+            return EmojiParser.parseToUnicode(":hugging: Услуги");
         }
     },
     B2 {
         public String toString() {
-            return "Галерея";
+            return EmojiParser.parseToUnicode(":purple_heart: Галлерея");
         }
     },
     B3 {
         public String toString() {
-            return "Йога";
+            return EmojiParser.parseToUnicode(":fire: Скидки и предложения");
         }
     },
     B4 {
         public String toString() {
-            return "Наш чат";
+            return EmojiParser.parseToUnicode(":thumbsup: Чат");
         }
     },
     B5 {
