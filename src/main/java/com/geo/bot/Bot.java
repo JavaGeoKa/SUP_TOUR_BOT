@@ -2,8 +2,10 @@ package com.geo.bot;
 
 
 import com.geo.dao.PersonRepositoty;
+import com.geo.enumerators.UserRoles;
 import com.geo.keys.Keys0;
 import com.geo.keys.KeysGallery;
+import com.geo.keys.KeysOtzyv;
 import com.geo.keys.KeysUslugi;
 import com.geo.model.Person;
 import com.vdurmont.emoji.EmojiParser;
@@ -82,6 +84,9 @@ public class Bot extends TelegramLongPollingBot {
                             put("В начало", () -> {
                                 return methodStart(update, message);
                             });
+                            put("getPrivilegies", () -> {
+                                return methodUpdatePrivilegies(update, message);
+                            });
                             put(EmojiParser.parseToUnicode(":hugging: Услуги"), () -> {
                                 return methodService(update, message);
                             });
@@ -94,10 +99,9 @@ public class Bot extends TelegramLongPollingBot {
                             put(EmojiParser.parseToUnicode(":fire: Скидки и предложения"), () -> {
                                 return methodStart(update, message);
                             });
-                            put(EmojiParser.parseToUnicode(":thumbsup: Чат"), () -> {
-                                return methodStart(update, message);
+                            put(EmojiParser.parseToUnicode(":thumbsup: Отзывы"), () -> {
+                                return methodOtzyv(update, message);
                             });
-
 
 
 
@@ -180,6 +184,49 @@ public class Bot extends TelegramLongPollingBot {
 
             }
 
+    private SendMessage methodUpdatePrivilegies(Update update, SendMessage message) {
+        //keys
+        keys.clear();
+        Keys0 arr[] = Keys0.values();
+        for (Keys0 i : arr) {
+            keys.add(i.toString());
+        }
+        addKeys(message, keys);
+
+        //logic
+        personRepositoty.updateRobotRequestStatus(update.getMessage().getChatId(), UserRoles.ADMIN);
+
+
+        answer.setLength(0);
+        answer.append("privilegies updated success");
+        message.setText(answer.toString());
+        return message;
+
+    }
+
+
+    private SendMessage methodOtzyv(Update update, SendMessage message) {
+        keys.clear();
+        KeysOtzyv arr[] = KeysOtzyv.values();
+        for (KeysOtzyv i : arr) {
+            keys.add(i.toString());
+        }
+        addKeys(message, keys);
+
+
+        answer.setLength(0);
+        answer.append("Пожалуйста, оставьте отзыв от нашей компании:\n");
+        message.setText(answer.toString());
+
+        //inlineKBD
+        message.enableMarkdown(true);
+        message.setReplyMarkup(this.getOtzyvyKeys());
+
+
+        return message;
+
+    }
+
     private SendMessage methodPics(Update update, SendMessage message) {
         keys.clear();
         KeysGallery arr[] = KeysGallery.values();
@@ -199,7 +246,7 @@ public class Bot extends TelegramLongPollingBot {
 //  METHODS----------------------------------------------------------------------------
 
 // /start
-        private SendMessage methodStart(Update update, SendMessage message) {
+    private SendMessage methodStart(Update update, SendMessage message) {
         //keys
         keys.clear();
         Keys0 arr[] = Keys0.values();
@@ -220,6 +267,7 @@ public class Bot extends TelegramLongPollingBot {
                 currentPerson.setLastName(update.getMessage().getFrom().getLastName() == null ?
                         "undefined" : update.getMessage().getFrom().getLastName());
                 currentPerson.setConnectTime(LocalDateTime.now());
+                currentPerson.setUserRoles(UserRoles.USER);
 
 
                 mapPersons.put(update.getMessage().getChatId(), currentPerson);
@@ -240,6 +288,7 @@ public class Bot extends TelegramLongPollingBot {
 
         }
 
+//Gallery Keyboard
     private InlineKeyboardMarkup getGalleryView(int index, int action){
         /*
          * action = 1 -> back
@@ -284,6 +333,34 @@ public class Bot extends TelegramLongPollingBot {
 
         return markupInline;
     }
+
+//Otzyvy Keyboard
+    private InlineKeyboardMarkup getOtzyvyKeys(){
+
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        rowInline.add(new InlineKeyboardButton().setText("Google").setUrl("https://www.google.com/"));
+        rowInline.add(new InlineKeyboardButton().setText("Yandex").setUrl("https://yandex.ru/"));
+        rowInline.add(new InlineKeyboardButton().setText("Flamp").setUrl("https://ekaterinburg.flamp.ru/"));
+
+//        List<InlineKeyboardButton> rowInline2 = new ArrayList<>();
+//        rowInline2.add(new InlineKeyboardButton().setText(BACK).setCallbackData("gallery:back:" + index));
+//        rowInline2.add(new InlineKeyboardButton().setText(NEXT).setCallbackData("gallery:next:" + index));
+
+//        List<InlineKeyboardButton> rowInline3 = new ArrayList<>();
+//        rowInline3.add(new InlineKeyboardButton().setText("Link").setUrl(DataStarter.urls.get(index)[0]));
+
+
+        rowsInline.add(rowInline);
+//        rowsInline.add(rowInline3);
+//        rowsInline.add(rowInline2);
+
+        markupInline.setKeyboard(rowsInline);
+
+        return markupInline;
+    }
+
 
 
     private void sendAnswerCallbackQuery(String text, boolean alert, CallbackQuery callbackquery) throws TelegramApiException{

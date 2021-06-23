@@ -1,16 +1,14 @@
 package com.geo.model;
 
 
+import com.geo.enumerators.UserRoles;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 
@@ -42,6 +40,10 @@ public class Person {
 
     @Column(name="LAST_USE")
     LocalDateTime lastUseTime;
+
+    @Column(name = "USER_ROLES")
+    @Enumerated(EnumType.STRING)
+    private UserRoles userRoles;
 
 
 

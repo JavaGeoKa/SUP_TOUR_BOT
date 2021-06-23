@@ -1,6 +1,7 @@
 package com.geo.dao;
 
 
+import com.geo.enumerators.UserRoles;
 import com.geo.model.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,6 +15,11 @@ import java.time.LocalDateTime;
 @Repository
 @Transactional
 public interface PersonRepositoty extends JpaRepository<Person, Long> {
+
+    @Modifying
+    @Query(value = "update Person p set p.userRoles = ?2 where p.id = ?1")
+    void updateRobotRequestStatus(Long id, UserRoles userRoles);
+
 
 //    @Query("SELECT p.carma FROM Person p WHERE p.id = :id")
 //    Integer getCarma(@Param("id") long id);

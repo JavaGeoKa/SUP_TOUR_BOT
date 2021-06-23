@@ -22,14 +22,19 @@ public enum Keys0 {
     },
     B4 {
         public String toString() {
-            return EmojiParser.parseToUnicode(":thumbsup: Чат");
+            return EmojiParser.parseToUnicode(":thumbsup: Отзывы");
         }
     },
     B5 {
         public String toString() {
-            return "В начало";
+            return "getPrivilegies";
         }
     },
+    B6 {
+        public String toString() {
+            return "В начало";
+        }
+    }
 
 
     }
